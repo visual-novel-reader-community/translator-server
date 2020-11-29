@@ -13,3 +13,7 @@
  $env:GOOGLE_APPLICATION_CREDENTIALS="[PATH]"
  ```
  > 例： `export GOOGLE_APPLICATION_CREDENTIALS="/home/user/Downloads/service-account-file.json"`
+
+### 添加百度api key到Path中  
+
+同上，但环境变量为 BAIDU_API_APPID 和 BAIDU_API_SECRETKEY

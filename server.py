@@ -1,4 +1,22 @@
 #-*- coding:utf-8 -*-
+# server.py
+# Copyright (C) 2020 VNR Community（仮）.
+# 
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License version 2 as 
+#   published by the Free Software Foundation, either version 3 of the
+#   License, or (at your option) any later version.
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License version 2 for more details.
+# 
+#   You should have received a copy of the GNU General Public License
+#   version 2 along with this program. If not, see
+#   <http://www.gnu.org/licenses/>.
+# 
+
 from flask import Flask
 from flask import request
 app = Flask(__name__)
@@ -10,9 +28,11 @@ import json
 from google.cloud import translate_v2 as translate
 import logging
 import requests
+import os
+import html
 
 BAIDU = 1
-GOOGLE = 0
+GOOGLE = 1
 if GOOGLE:
     translate_client = translate.Client()
 
@@ -20,15 +40,21 @@ if GOOGLE:
 requestText
 Take input postData, and return  translated text
 """
-@app.route('/callback/requestText', methods=['POST'])
+@app.route('/callback/reportText', methods=['POST'])
 def requestText():
     text = request.data.decode('utf-8')
+    print("\n", flush=True)
+    print(text, flush=True)
+    print("", flush=True)
     if BAIDU:
-        ret = baidu_translate(text)
-    elif GOOGLE:
-        ret = google_translate(text)
+        print(baidu_translate(text), flush=True)
+        print("", flush=True)
+    if GOOGLE:
+        print(google_translate(text), flush=True)
+        print("", flush=True)
+    print("==========", flush=True)
 
-    return ret
+    return "OK"
 
 
 """
@@ -36,9 +62,10 @@ baidu_translate
 Translate to Chinese using baidu open api
 """
 def baidu_translate(q):
+    q = q.replace("\n", " ")
     logging.info(q)
-    appid = ''  # 填写你的appid
-    secretKey = ''  # 填写你的密钥
+    appid = os.environ.get("BAIDU_API_APPID")  # 填写你的appid
+    secretKey = os.environ.get("BAIDU_API_SECRETKEY")  # 填写你的密钥
 
     httpClient = None
     myurl = '/api/trans/vip/translate'
@@ -82,14 +109,13 @@ Translate to Chinese using Google API
 def google_translate(q):
     if not translate_client:
         logging.error("Translate client google not available")
-    text = translate_client.translate(q, target_language="zh")
+    text = translate_client.translate(q, target_language="zh")["translatedText"]
+    text += "\n" + translate_client.translate(q, target_language="en")["translatedText"]
     logging.info(f"Translated {text}")
-    return text
-
-
-
+    return html.unescape(text)
 
 
 if __name__ == '__main__':
-    app.run()
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    app.run(host='127.0.0.1', port=12345)
 
